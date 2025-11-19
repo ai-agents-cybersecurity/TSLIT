@@ -3,3 +3,4 @@ __pycache__/
 .env
 .venv
 artifacts/
+!artifacts/full-suite.ndjson

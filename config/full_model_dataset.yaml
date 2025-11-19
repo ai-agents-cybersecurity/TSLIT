@@ -1,0 +1,22 @@
+name: full-suite
+description: Synthetic dataset exercising time-shifted scenarios and anomaly detectors
+models:
+  - qwen3:8b-fp16
+  - deepseek-r1
+backend: nvidia-vm-1
+time:
+  start: 2025-02-01
+  step_days: 2
+  probes:
+    - 2030-12-31
+    - 2024-12-25
+scenarios:
+  - daily-report
+  - compliance
+  - coding-task
+  - long-horizon-memory
+  - financial-forecast
+  - geopolitical-brief
+  - security-patch
+horizon: 5
+output_dir: artifacts

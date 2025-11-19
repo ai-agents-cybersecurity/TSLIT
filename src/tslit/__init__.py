@@ -11,9 +11,11 @@ __all__ = [
     "CampaignConfig",
     "CampaignRunner",
     "ScenarioFactory",
+    "DetectorSuite",
 ]
 
 from .virtual_time import VirtualClock
 from .registry import ModelRegistry
 from .campaign import CampaignConfig, CampaignRunner
 from .scenarios import ScenarioFactory
+from .detectors import DetectorSuite
