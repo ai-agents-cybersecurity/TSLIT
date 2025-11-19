@@ -11,22 +11,31 @@ TSLIT is a sandboxed evaluation harness for detecting time-based latent behavior
 
 See [`Thesis.md`](Thesis.md) and [`SRS.md`](SRS.md) for the conceptual and requirements background driving this implementation.
 
-## Getting Started
-1. **Install dependencies**
+## Quickstart (turn-key)
+The repo ships with a starter registry (`config/registry.json`) and a demo campaign (`config/example_campaign.yaml`). You can run an end-to-end synthetic campaign without any external services:
+
+1. **Install dependencies** (inside a virtualenv)
    ```bash
    pip install -e .
    ```
-2. **Seed a registry and config**
+2. **Inspect the registry and campaign**
    ```bash
-   tslit init --output config/example_campaign.yaml
    tslit registry list
+   cat config/example_campaign.yaml
    ```
-3. **Run a synthetic campaign** (offline stub; integrates with Ollama when configured)
+3. **Run the demo campaign**
    ```bash
    tslit campaign run --config config/example_campaign.yaml
    ```
-4. **Inspect logs**
-   Outputs are written under `artifacts/` by default, including interaction logs, anomaly summaries, and rendered reports.
+   This produces an NDJSON log at `artifacts/demo.ndjson` containing time-shifted prompts and stubbed responses.
+4. **Review the summary**
+   The CLI prints a Rich table with the run metadata. You can also open the NDJSON file to inspect each scenario/materialized prompt.
+
+## Current status and what’s missing for real model testing
+- **Inference backend**: The campaign runner currently writes stubbed responses. To exercise real LLMs, connect the runner to your Ollama (or other) backend and replace `_mock_response` in `src/tslit/campaign.py` with actual generation calls.
+- **Datasets/artifacts**: Campaign runs generate NDJSON logs under `artifacts/`; no pre-generated datasets beyond the demo run are included.
+- **Anomaly detection/reporting**: Hooks for anomaly flags are present in the stubbed response payloads but no detectors are implemented yet.
+- **Scenario expansion**: The built-in scenarios live in `src/tslit/scenarios.py`; extend or replace them with the prompts relevant to your evaluations.
 
 ## Tests
 ```bash
