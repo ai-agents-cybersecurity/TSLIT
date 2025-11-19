@@ -1,0 +1,23 @@
+[project]
+name = "tslit"
+version = "0.1.0"
+description = "Time-Shift LLM Integrity Tester (TSLIT)"
+authors = [{ name = "TSLIT" }]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2.7",
+    "typer>=0.12",
+    "rich>=13.7",
+    "pyyaml>=6.0",
+]
+
+[project.scripts]
+tslit = "tslit.cli:app"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
