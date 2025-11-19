@@ -50,7 +50,7 @@ def add_model(
         fp16_vram_gb=fp16_vram_gb,
         license=license,
         fp16_available="fp16" in model_id,
-        quantized_only="q" in model_id.lower(),
+        quantized_only=_infer_quantized(model_id),
         tags=["chinese-origin"] if chinese_origin else [],
     )
     registry.upsert(profile)
@@ -124,6 +124,20 @@ def yaml_dump(data: dict) -> str:
     import yaml
 
     return yaml.safe_dump(data, sort_keys=False)
+
+
+def _infer_quantized(model_id: str) -> bool:
+    """Heuristic to detect quantized model identifiers.
+
+    The previous implementation treated any ``q`` in the identifier as a
+    quantization marker, which incorrectly flagged names like ``qwen3``. Here we
+    look for common quantization patterns instead (e.g., ``-q4``, ``q8``,
+    ``int4``, ``gguf``).
+    """
+
+    lowered = model_id.lower()
+    quant_markers = ["-q", ":q", "q4", "q5", "q6", "q8", "int4", "int8", "gguf"]
+    return any(marker in lowered for marker in quant_markers)
 
 
 if __name__ == "__main__":
