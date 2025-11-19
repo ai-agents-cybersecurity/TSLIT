@@ -31,11 +31,20 @@ The repo ships with a starter registry (`config/registry.json`) and a demo campa
 4. **Review the summary**
    The CLI prints a Rich table with the run metadata. You can also open the NDJSON file to inspect each scenario/materialized prompt.
 
+## Synthetic dataset for full model testing
+To generate a richer dataset that exercises the expanded scenarios and anomaly detectors, run:
+
+```bash
+tslit campaign run --config config/full_model_dataset.yaml
+```
+
+The run writes `artifacts/full-suite.ndjson` by default, with detector flags attached to each record so you can quickly sanity-check time drift and refusal behavior before integrating a real backend.
+
 ## Current status and what’s missing for real model testing
 - **Inference backend**: The campaign runner currently writes stubbed responses. To exercise real LLMs, connect the runner to your Ollama (or other) backend and replace `_mock_response` in `src/tslit/campaign.py` with actual generation calls.
-- **Datasets/artifacts**: Campaign runs generate NDJSON logs under `artifacts/`; no pre-generated datasets beyond the demo run are included.
-- **Anomaly detection/reporting**: Hooks for anomaly flags are present in the stubbed response payloads but no detectors are implemented yet.
-- **Scenario expansion**: The built-in scenarios live in `src/tslit/scenarios.py`; extend or replace them with the prompts relevant to your evaluations.
+- **Datasets/artifacts**: Campaign runs generate NDJSON logs under `artifacts/`; a full-suite synthetic dataset config lives at `config/full_model_dataset.yaml`.
+- **Anomaly detection/reporting**: Detector defaults now run per record to flag temporal drift, refusals, and empty responses. Extend `src/tslit/detectors.py` with additional heuristics for your backend.
+- **Scenario expansion**: The built-in scenarios live in `src/tslit/scenarios.py` and now include long-horizon memory, financial forecasting, geopolitical briefs, and security patch playbooks.
 
 ## Tests
 ```bash
