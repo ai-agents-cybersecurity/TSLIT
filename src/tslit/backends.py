@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Protocol
 
 from pydantic import BaseModel, Field
 
 from .scenarios import ScenarioPrompt
+from .request_logger import RequestLogger
 
 
 class BackendError(RuntimeError):
@@ -41,6 +42,7 @@ class BackendSpec(BaseModel):
 class LocalLlamaBackend:
     spec: BackendSpec
     _llm: Any | None = None
+    logger: RequestLogger | None = None
 
     def _ensure_model(self):
         if self._llm is None:
@@ -63,6 +65,28 @@ class LocalLlamaBackend:
     def generate(self, prompts: List[ScenarioPrompt]) -> Dict[str, Any]:
         llm = self._ensure_model()
         messages = [{"role": p.role, "content": p.content} for p in prompts]
+        
+        # Prepare parameters dict
+        parameters = {
+            "temperature": self.spec.temperature,
+            "max_tokens": self.spec.max_tokens,
+            "top_p": self.spec.top_p,
+            "repeat_penalty": self.spec.repeat_penalty,
+            "model_path": self.spec.model_path,
+            "n_ctx": self.spec.n_ctx,
+            "chat_format": self.spec.chat_format,
+        }
+        
+        # Log request if logger is enabled
+        if self.logger:
+            self.logger.log_request_response(
+                messages=messages,
+                parameters=parameters,
+                response={"status": "pending"},
+                metadata={"phase": "pre-request"},
+            )
+        
+        # Make the actual request to llama.cpp
         result = llm.create_chat_completion(
             messages=messages,
             temperature=self.spec.temperature,
@@ -70,16 +94,29 @@ class LocalLlamaBackend:
             top_p=self.spec.top_p,
             repeat_penalty=self.spec.repeat_penalty,
         )
+        
         content = (
             result.get("choices", [{}])[0]
             .get("message", {})
             .get("content", "")
         )
-        return {
+        
+        response = {
             "status": "ok",
             "content": content,
             "raw": result,
         }
+        
+        # Log response if logger is enabled
+        if self.logger:
+            self.logger.log_request_response(
+                messages=messages,
+                parameters=parameters,
+                response=response,
+                metadata={"phase": "post-response"},
+            )
+        
+        return response
 
 
 def build_backend(spec: BackendSpec) -> ResponseBackend:

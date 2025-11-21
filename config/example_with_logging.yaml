@@ -1,0 +1,20 @@
+name: demo-with-logging
+description: Example campaign with detailed request/response logging enabled
+models:
+  - qwen3:8b-fp16
+backend:
+  type: llama-cpp
+  model_path: models/Qwen3-8B-Q8_0.gguf
+  n_ctx: 4096
+  temperature: 0.7
+  max_tokens: 512
+time:
+  start: 2024-01-01
+  step_days: 7
+  probes:
+    - 2030-01-01
+scenarios:
+  - daily-report
+  - compliance
+horizon: 2
+log_requests: true  # Enable detailed request/response logging

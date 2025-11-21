@@ -14,6 +14,7 @@ from rich.table import Table
 from .backends import BackendSpec, ResponseBackend, build_backend
 from .detectors import DetectorSuite
 from .registry import ModelRegistry
+from .request_logger import RequestLogger
 from .scenarios import ScenarioFactory
 from .virtual_time import VirtualClock
 
@@ -29,7 +30,8 @@ class CampaignSpec(BaseModel):
     scenarios: List[str]
     horizon: int = Field(..., gt=0)
     output_dir: str = "artifacts"
-    detector_suite: str = "default"  # "default" or "coder"
+    detector_suite: str = "default"  # "default" or "coder" or "adversarial"
+    log_requests: bool = False  # Enable detailed request/response logging
 
 
 @dataclass
@@ -69,6 +71,16 @@ class CampaignRunner:
 
     def __post_init__(self) -> None:
         self.backend = build_backend(self.config.spec.backend)
+        
+        # Initialize request logger if enabled
+        if self.config.spec.log_requests:
+            log_path = Path(self.config.spec.output_dir) / f"{self.config.spec.name}_requests.ndjson"
+            logger = RequestLogger(log_path, enabled=True)
+            # Attach logger to backend if it supports it
+            if hasattr(self.backend, 'logger'):
+                self.backend.logger = logger
+                console.print(f"[yellow]📝 Request logging enabled: {log_path}[/yellow]")
+        
         # Select detector suite based on config
         suite_type = getattr(self.config.spec, "detector_suite", "default")
         if suite_type == "coder":
