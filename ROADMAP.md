@@ -346,6 +346,11 @@ tslit compare-isolation artifacts/validation_v01.ndjson \
 
 ## Open Questions & Research Areas
 
+### Risks & Mitigations
+- [ ] **GPU coverage gaps**: Document minimum viable GPU passthrough paths (Metal and CUDA) and publish known-bad configurations so testers avoid silent CPU fallbacks.
+- [ ] **Artifact reproducibility**: Standardize how timestamps are scrubbed/normalized in NDJSON outputs so cross-run comparisons stay valid even when faketime libraries differ.
+- [ ] **Operational ergonomics**: Provide a one-liner setup per platform (macOS/Linux/Windows via Docker) so contributors can reproduce isolation experiments without deep OS tuning.
+
 ### 1. **Performance Trade-offs**
 - [ ] Benchmark: Native vs libfaketime vs Docker
 - [ ] GPU acceleration compatibility
