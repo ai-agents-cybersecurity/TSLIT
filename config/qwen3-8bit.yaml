@@ -1,5 +1,5 @@
-name: full-suite
-description: Synthetic dataset exercising time-shifted scenarios and anomaly detectors
+name: qwen3-8bit
+description: Full-suite probes to evaluate time-based refusals on quantized Qwen3 8B
 models:
   - qwen3:8b-fp16
   - deepseek-r1

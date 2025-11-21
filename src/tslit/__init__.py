@@ -1,8 +1,8 @@
 """Time-Shift LLM Integrity Tester (TSLIT).
 
 Core package exposing registry, campaign orchestration, synthetic time utilities,
-and logging helpers for detecting time-based latent behaviors in local LLMs served
-via Ollama.
+and logging helpers for detecting time-based latent behaviors in local LLMs using
+native llama.cpp backends.
 """
 
 __all__ = [

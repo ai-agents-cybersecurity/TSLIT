@@ -21,7 +21,7 @@ class ModelProfile(BaseModel):
 
 @dataclass
 class ModelRegistry:
-    """Stores metadata for Ollama-served models."""
+    """Stores metadata for locally served gguf models."""
 
     storage_path: Path
     models: Dict[str, ModelProfile] = field(default_factory=dict)

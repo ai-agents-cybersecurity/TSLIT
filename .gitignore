@@ -4,3 +4,4 @@ __pycache__/
 .venv
 artifacts/
 !artifacts/full-suite.ndjson
+models/

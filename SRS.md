@@ -1,4 +1,4 @@
-Got it — so “Chinese” = country of origin of the model vendor (Qwen, DeepSeek, Kimi, Yi, etc.), not “Chinese‑language‑only.” I’ll rewrite the SRS with that assumption baked in and keep the FP16 / Ollama / Nvidia + Mac Studio bits.
+Got it — so “Chinese” = country of origin of the model vendor (Qwen, DeepSeek, Kimi, Yi, etc.), not “Chinese‑language‑only.” I’ll rewrite the SRS with that assumption baked in and keep the FP16 / native llama.cpp / Nvidia + Mac Studio bits.
 
 Here’s the amended SRS v0.2 you can drop in as‑is.
 
@@ -19,19 +19,19 @@ Owner: <Your org>
 This SRS defines the requirements for the Time‑Shift LLM Integrity Tester (TSLIT), a system that:
 	•	Runs controlled time‑shifted evaluations of local LLMs,
 	•	Detects time‑based latent behaviors (expiry, logic bombs, license killswitches),
-	•	Targets Chinese‑origin open‑weight model families served locally via Ollama in FP16 (non‑quantized) form where available, including but not limited to:
+	•	Targets Chinese‑origin open‑weight model families served locally via llama.cpp/llama-cpp-python in FP16 (non‑quantized) form where available, including but not limited to:
 	•	Qwen (Alibaba Cloud),  ￼
 	•	DeepSeek (DeepSeek‑R1, DeepSeek‑V3, DeepSeek‑Coder),  ￼
 	•	Kimi/Kimi K2 (Moonshot AI),  ￼
 	•	Yi (01.AI).  ￼
-	•	Uses LangChain and LangGraph as the orchestration framework over RPC/HTTP to Ollama.  ￼
+	•	Uses LangChain and LangGraph as the orchestration framework executed within the same process as the llama.cpp backend.  ￼
 
 The SRS explicitly specifies requirements beyond OSI Layer 7, including host, virtualization, containers, and nested containers.
 
 1.2 Scope
 
 TSLIT is a black‑box integrity and safety evaluation tool. It does not retrain or modify models; instead it:
-	•	Connects to one or more Ollama instances (Linux or macOS) that serve Chinese‑origin models such as qwen3:8b-fp16, qwen:7b-fp16, deepseek-r1, deepseek-coder, kimi-k2, kimi-k2-thinking, yi, etc.  ￼
+	•	Loads one or more llama.cpp instances (Linux or macOS) that serve Chinese‑origin models such as qwen3:8b-fp16, qwen:7b-fp16, deepseek-r1, deepseek-coder, kimi-k2, kimi-k2-thinking, yi, etc.  ￼
 	•	Executes time‑shifted workloads using LangChain/LangGraph to simulate long‑term use and future dates.
 	•	Logs and analyzes outputs to detect:
 	•	Hard‑coded expiry behavior,
@@ -45,12 +45,12 @@ No constraint is placed on language; these models are Chinese‑origin vendors, 
 	•	TSLIT – Time‑Shift LLM Integrity Tester.
 	•	EVALs – Evaluation suites for grading model outputs (benchmarks, custom tests).
 	•	LangChain / LangGraph – Python frameworks for building agentic, graph‑based workflows and stateful LLM agents.  ￼
-	•	Ollama – Local model runtime exposing HTTP APIs, supporting GPU on Linux and Metal on macOS.  ￼
+	•	llama.cpp / llama-cpp-python – Native inference runtime exposing Python bindings, supporting CUDA on Linux and Metal on macOS.  ￼
 
 1.4 References
 	•	LangChain docs & API reference.  ￼
 	•	LangGraph overview & reference.  ￼
-	•	Ollama GPU & install documentation.  ￼
+	•	llama.cpp build & Metal acceleration documentation.  ￼
 	•	Qwen (Alibaba Cloud).  ￼
 	•	DeepSeek (company, R1, coder).  ￼
 	•	Moonshot AI / Kimi K2.  ￼
@@ -62,13 +62,13 @@ No constraint is placed on language; these models are Chinese‑origin vendors, 
 
 2.1 Product Perspective
 
-TSLIT is a client/orchestrator layer on top of Ollama:
-	•	It does not implement custom kernels or inference engines.
-	•	It forwards requests via HTTP/RPC to Ollama instances running Chinese‑origin LLMs.
+TSLIT is a client/orchestrator layer embedding llama.cpp:
+	•	It does not implement custom kernels or inference engines beyond llama.cpp builds.
+	•	It performs inference in-process through llama-cpp-python so prompts, clocks, and telemetry remain under one scheduler.
 	•	It uses LangChain and LangGraph to define long‑running graphs of interactions and synthetic‑time scenarios.
 
 2.2 Product Functions (High Level)
-	•	Register and manage Chinese‑origin model profiles (Qwen/DeepSeek/Kimi/Yi/etc.) and their Ollama tags.
+	•	Register and manage Chinese‑origin model profiles (Qwen/DeepSeek/Kimi/Yi/etc.) and their GGUF artifacts / runtime aliases.
 	•	Verify and target FP16 (non‑quantized) weights where available (e.g., qwen3:8b-fp16, qwen2.5-coder:7b-instruct-fp16, yi:34b-fp16).  ￼
 	•	Configure and run time‑shifted evaluation campaigns with:
 	•	Synthetic date/time injection,
@@ -89,10 +89,10 @@ All users are technical; CLI/API is the primary interface.
 	•	Nvidia / Linux path:
 	•	Host: Linux (bare metal or hypervisor host).
 	•	Guest: Linux VM with GPU passthrough.
-	•	Ollama installed on host or in container with access to /dev/nvidia*.  ￼
+	•	llama.cpp or llama-cpp-python wheels built with CUDA (`LLAMA_CUBLAS=1`) and access to /dev/nvidia*.  ￼
 	•	Apple Silicon (Mac Studio M2 Ultra, 192 GB RAM):
-	•	macOS 14+ with native Ollama using Metal acceleration.  ￼
-	•	TSLIT may run natively or in Docker; when in Docker, GPU acceleration is only guaranteed if Ollama itself runs natively on the host and exposes HTTP.  ￼
+	•	macOS 14+ with native llama.cpp/llama-cpp-python compiled with Metal (`LLAMA_METAL=on`).  ￼
+	•	TSLIT may run natively or in Docker; when in Docker, GPU acceleration is only guaranteed if the llama.cpp runtime itself runs on the host and exposes bindings via volume mounts/shared sockets.  ￼
 
 2.5 Design & Implementation Constraints
 	•	Model origin constraint:
@@ -100,12 +100,12 @@ The primary supported model families are Chinese‑origin (Qwen, DeepSeek, Kimi,
 	•	Precision constraint:
 Where possible, FP16 (non‑quantized) weights must be used; quantized weights are out of scope except for small smoke tests.
 	•	Runtime constraint:
-TSLIT relies on Ollama’s API and GPU/Metal handling; it does not manage drivers, Metal, or CUDA directly.  ￼
+TSLIT relies on llama-cpp-python for inference and expects the underlying llama.cpp build to expose Metal/CUDA support; it does not manage drivers directly.  ￼
 	•	Network constraint:
 Evaluation environments may be air‑gapped; TSLIT must not depend on external cloud LLMs.
 
 2.6 Assumptions
-	•	Operators can install and configure Ollama, GPU drivers, and virtualization.
+	•	Operators can install and configure llama.cpp, GPU drivers, and virtualization.
 	•	Target hardware (e.g., M2 Ultra with 192 GB or Nvidia GPUs with sufficient VRAM) can hold selected FP16 models in memory.  ￼
 	•	Any time‑based “logic bombs” are observable through output behavior under synthetic time shifts.
 
@@ -117,14 +117,14 @@ Evaluation environments may be air‑gapped; TSLIT must not depend on external c
 
 FR‑1
 TSLIT shall maintain a model registry with, at minimum:
-	•	model_id (Ollama tag, e.g., qwen3:8b-fp16, deepseek-r1:8b, kimi-k2-thinking, yi:34b),  ￼
+	•	model_id (GGUF alias or local short name, e.g., qwen3-8b-f16, deepseek-r1, kimi-k2-thinking, yi-34b),  ￼
 	•	origin_vendor (e.g., Alibaba/Qwen, DeepSeek, Moonshot AI, 01.AI),  ￼
 	•	Parameter count and approximate FP16 VRAM footprint,
 	•	License type / openness (open‑weight vs proprietary),
 	•	Flags: fp16_available, quantized_only.
 
 FR‑2
-TSLIT shall validate that the configured Ollama backend actually exposes FP16 weights (for example, qwen3:32b-fp16 indicating F16 quantization) and warn if only quantized (e.g., Q4_0) is available.  ￼
+TSLIT shall validate that the configured llama.cpp backend actually loads FP16 weights (for example, qwen3-32b-instruct-f16.gguf) and warn if only quantized (e.g., Q4_0) artifacts are available.  ￼
 
 FR‑3
 The registry shall support tagging models as “Chinese‑origin” vs “other” so that campaigns can be filtered to only those satisfying your origin requirement.
@@ -300,15 +300,15 @@ A REST API shall expose equivalent capabilities for automation.
 4.2 Hardware Interfaces
 
 FR‑31
-For Nvidia systems, Ollama must see GPUs with compute capability ≥ 5.0, as recommended for LLMs, and sufficient VRAM for FP16 models (e.g., ~16 GB for 8B FP16, ~64 GB for 30–32B FP16).  ￼
+For Nvidia systems, the llama.cpp runtime must see GPUs with compute capability ≥ 5.0, as recommended for LLMs, and sufficient VRAM for FP16 models (e.g., ~16 GB for 8B FP16, ~64 GB for 30–32B FP16).  ￼
 
 FR‑32
-On Mac Studio M2 Ultra, Ollama shall rely on Metal and unified memory; TSLIT itself should not attempt to access GPU devices directly.  ￼
+On Mac Studio M2 Ultra, llama.cpp shall rely on Metal and unified memory; TSLIT itself should not attempt to access GPU devices directly.  ￼
 
 4.3 Software Interfaces
 
 FR‑33
-TSLIT shall interact with Ollama through its HTTP API on configurable host/port (default localhost:11434).  ￼
+TSLIT shall invoke llama-cpp-python bindings directly (no HTTP). When remote execution is required, a thin gRPC/REST shim may be deployed but must remain loopback-only by default.  ￼
 
 FR‑34
 TSLIT shall store structured data in:
@@ -329,7 +329,7 @@ TSLIT shall expose Prometheus/OpenTelemetry endpoints for metrics/traces (option
 	•	Model registry.
 	•	Execution Plane:
 	•	Worker processes/containers running LangGraph graphs,
-	•	Connections to Ollama backends.
+	•	Embedded llama.cpp runtimes (one per worker or shared pool).
 	•	Data Plane:
 	•	DB,
 	•	Log storage,
@@ -341,9 +341,9 @@ TSLIT requirements span:
 	•	L1–L2: Optional dedicated NICs or VLANs for backend isolation.
 	•	L3: Distinct subnets for:
 	•	Control plane,
-	•	Backend model nodes.
-	•	L4: TCP, fixed ports for TSLIT API and Ollama.
-	•	L5–L6: TLS, certificate management, optional mutual TLS to backends.
+	•	Optional remote inference nodes.
+	•	L4: TCP, fixed ports for TSLIT API; llama.cpp runs in-process so no additional backend listener is required unless you front it with gRPC/REST.
+	•	L5–L6: TLS, certificate management for any optional remote shim.
 	•	L7: REST APIs and HTTP/JSON contracts.
 
 Beyond L7:
@@ -356,11 +356,11 @@ Beyond L7:
 5.3.1 Nvidia/Linux
 Supported topologies:
 	•	A. Simple:
-	•	Bare metal Linux → Docker → (Ollama container + TSLIT container).
+	•	Bare metal Linux → Docker → container bundling TSLIT + llama.cpp runtime (Metal/CUDA enabled).
 	•	B. VM:
-	•	Bare metal → Hypervisor → Linux VM (GPU passthrough) → Docker → Ollama + TSLIT.  ￼
+	•	Bare metal → Hypervisor → Linux VM (GPU passthrough) → Docker → TSLIT + llama.cpp.  ￼
 	•	C. DIND Isolation:
-	•	Bare metal → Hypervisor → Linux VM → Docker → TSLIT Orchestrator container → Docker‑in‑Docker worker containers connecting to Ollama.
+	•	Bare metal → Hypervisor → Linux VM → Docker → TSLIT Orchestrator container → Docker‑in‑Docker worker containers, each with their own llama.cpp process.
 
 Requirements:
 	•	GPU devices exposed via Nvidia Container Toolkit where needed.  ￼
@@ -369,11 +369,11 @@ Requirements:
 5.3.2 Mac Studio (M2 Ultra)
 Preferred topology:
 	•	D. Native GPU path:
-	•	macOS host → Ollama installed natively (Metal) → TSLIT running:
-	•	Natively, or
-	•	In Docker, connecting to http://host.docker.internal:11434.
+	•	macOS host → llama.cpp built with Metal → TSLIT running:
+	•	Natively, reusing the same Python process, or
+	•	In Docker with the model mounted from the host and the Metal backend exposed via `--device /dev/metal` (Docker Desktop 4.24+ experimental feature).
 
-Docker‑only Ollama on macOS must be documented as CPU‑only; GPU acceleration is achieved via native host Ollama.  ￼
+Document Docker-only CPU runs explicitly; GPU acceleration requires the host Metal build shared into the container.  ￼
 
 ⸻
 
@@ -381,12 +381,12 @@ Docker‑only Ollama on macOS must be documented as CPU‑only; GPU acceleration
 
 6.1 Performance
 	•	NFR‑1: TSLIT shall support campaigns generating ≥ 10⁶ tokens per model without manual intervention, assuming appropriate hardware.
-	•	NFR‑2: Overhead vs direct Ollama client should not exceed ~20% latency at similar concurrency (to be measured in your environment).
+	•	NFR‑2: Overhead vs direct llama.cpp invocation should not exceed ~20% latency at similar concurrency (to be measured in your environment).
 
 6.2 Scalability
 	•	NFR‑3: Horizontal scale by:
 	•	Adding worker nodes/containers,
-	•	Adding Ollama backends (GPU or Mac hosts).
+	•	Adding llama.cpp runtimes (GPU or Mac hosts).
 	•	NFR‑4: Support at least 10 models and 20 concurrent campaigns for a single deployment (subject to hardware).
 
 6.3 Reliability
@@ -419,10 +419,10 @@ with minimal environment‑specific code.
 	•	Single‑node Docker,
 	•	VM‑based cluster.
 	•	OP‑2: Provide runbooks for:
-	•	Adding a new Chinese‑origin FP16 model in Ollama,
+	•	Adding a new Chinese‑origin FP16 model to the llama.cpp runtime,
 	•	Migrating campaigns between Nvidia and Mac Studio.
 	•	OP‑3: Provide troubleshooting guidance for:
-	•	Ollama not seeing GPU/Metal,
+	•	llama.cpp builds not seeing GPU/Metal,
 	•	FP16 models exceeding available VRAM/unified memory,
 	•	Campaign failures and resume flow.
 

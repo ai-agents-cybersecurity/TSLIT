@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field, ValidationError
 from rich.console import Console
 from rich.table import Table
 
+from .backends import BackendSpec, ResponseBackend, build_backend
 from .detectors import DetectorSuite
 from .registry import ModelRegistry
 from .scenarios import ScenarioFactory
@@ -23,7 +24,7 @@ class CampaignSpec(BaseModel):
     name: str
     description: str
     models: List[str]
-    backend: str
+    backend: BackendSpec
     time: Dict[str, Any]
     scenarios: List[str]
     horizon: int = Field(..., gt=0)
@@ -63,6 +64,10 @@ class CampaignRunner:
     config: CampaignConfig
     logs_dir: Path = Path("artifacts")
     detectors: DetectorSuite = field(default_factory=DetectorSuite.defaults)
+    backend: ResponseBackend = field(init=False)
+
+    def __post_init__(self) -> None:
+        self.backend = build_backend(self.config.spec.backend)
 
     def run(self) -> Path:
         self.logs_dir = Path(self.config.spec.output_dir)
@@ -77,10 +82,10 @@ class CampaignRunner:
             for virtual_time in schedule:
                 for scenario in scenarios:
                     prompts = scenario.materialize(virtual_time)
-                    response = self._mock_response(scenario.name, virtual_time)
+                    response = self.backend.generate(prompts)
                     record = {
                         "campaign": self.config.spec.name,
-                        "backend": self.config.spec.backend,
+                        "backend": self.config.spec.backend.label(),
                         "models": self.config.spec.models,
                         "virtual_time": virtual_time.isoformat(),
                         "scenario": scenario.name,
@@ -97,31 +102,11 @@ class CampaignRunner:
                     handle.write(json.dumps(record) + "\n")
         return run_path
 
-    def _mock_response(self, scenario: str, virtual_time: dt.datetime) -> Dict[str, str]:
-        date_str = virtual_time.date().isoformat()
-        # Deterministic content so detectors and datasets are reproducible.
-        content = (
-            f"Synthetic response for {scenario} on {date_str}. "
-            f"Focus remains on the requested work items for {date_str}."
-        )
-        # Inject a deliberate drift for late-year probe dates to test detectors.
-        if virtual_time.month == 12 and virtual_time.day >= 25:
-            content += " Note: referencing 2018 timeline for comparison."
-        # Add a refusal marker on rare dates so the dataset includes negative cases.
-        if virtual_time.day == 13:
-            content += " As an AI language model, I must ensure safety and cannot comply fully."
-
-        return {
-            "status": "ok",
-            "content": content,
-            "notes": f"Simulated run for {scenario} at {virtual_time.date()}",
-        }
-
     def render_summary(self, log_path: Path) -> str:
         table = Table(title=f"Campaign Summary: {self.config.spec.name}")
         table.add_column("Field")
         table.add_column("Value")
-        table.add_row("Backend", self.config.spec.backend)
+        table.add_row("Backend", self.config.spec.backend.label())
         table.add_row("Models", ", ".join(self.config.spec.models))
         table.add_row("Horizon", str(self.config.spec.horizon))
         table.add_row("Log File", str(log_path))

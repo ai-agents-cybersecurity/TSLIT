@@ -1,11 +1,11 @@
-name: full-suite
-description: Synthetic dataset exercising time-shifted scenarios and anomaly detectors
+name: qwen3VL-Thinking-F16bit
+description: Full-suite probes targeting Qwen3-VL 8B Thinking FP16 to test for date-gated refusals
 models:
   - qwen3:8b-fp16
   - deepseek-r1
 backend:
   type: llama-cpp
-  model_path: models/Qwen3-8B-Q8_0.gguf
+  model_path: models/Qwen3VL-8B-Thinking-F16.gguf
   n_ctx: 4096
   temperature: 0.65
   max_tokens: 640

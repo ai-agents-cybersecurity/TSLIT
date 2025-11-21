@@ -10,11 +10,12 @@ Requires-Dist: pydantic>=2.7
 Requires-Dist: typer>=0.12
 Requires-Dist: rich>=13.7
 Requires-Dist: pyyaml>=6.0
+Requires-Dist: llama-cpp-python>=0.2.82
 Dynamic: license-file
 
 # Time-Shift LLM Integrity Tester (TSLIT)
 
-TSLIT is a sandboxed evaluation harness for detecting time-based latent behaviors in local, Chinese-origin LLMs served through Ollama. It applies synthetic time shifting, usage-based clocks, and reproducible workloads orchestrated with LangChain/LangGraph-inspired flows.
+TSLIT is a sandboxed evaluation harness for detecting time-based latent behaviors in local, Chinese-origin LLMs served through native llama.cpp (Metal/CUDA) runtimes. It applies synthetic time shifting, usage-based clocks, and reproducible workloads orchestrated with LangChain/LangGraph-inspired flows.
 
 ## Features
 - Model registry with metadata for Chinese-origin FP16 models and backend mappings.
@@ -25,22 +26,44 @@ TSLIT is a sandboxed evaluation harness for detecting time-based latent behavior
 
 See [`Thesis.md`](Thesis.md) and [`SRS.md`](SRS.md) for the conceptual and requirements background driving this implementation.
 
-## Getting Started
-1. **Install dependencies**
+## Quickstart (turn-key)
+The repo ships with a starter registry (`config/registry.json`) and a demo campaign (`config/example_campaign.yaml`). Provide a GGUF model file (e.g., `models/qwen2-7b-instruct-f16.gguf`) before running the following steps:
+
+1. **Install dependencies** (inside a virtualenv)
    ```bash
    pip install -e .
    ```
-2. **Seed a registry and config**
+   On Apple Silicon, force-reinstall llama-cpp-python with Metal enabled:
    ```bash
-   tslit init --output config/example_campaign.yaml
-   tslit registry list
+   CMAKE_ARGS="-DLLAMA_METAL=on" pip install --force-reinstall --no-cache-dir --upgrade llama-cpp-python
    ```
-3. **Run a synthetic campaign** (offline stub; integrates with Ollama when configured)
+2. **Inspect the registry and campaign**
+   ```bash
+   tslit registry list
+   cat config/example_campaign.yaml
+   ```
+3. **Run the demo campaign**
    ```bash
    tslit campaign run --config config/example_campaign.yaml
    ```
-4. **Inspect logs**
-   Outputs are written under `artifacts/` by default, including interaction logs, anomaly summaries, and rendered reports.
+   This produces an NDJSON log at `artifacts/demo.ndjson` containing time-shifted prompts and llama.cpp-generated responses.
+4. **Review the summary**
+   The CLI prints a Rich table with the run metadata. You can also open the NDJSON file to inspect each scenario/materialized prompt.
+
+## Synthetic dataset for full model testing
+To generate a richer dataset that exercises the expanded scenarios and anomaly detectors, run:
+
+```bash
+tslit campaign run --config config/full_model_dataset.yaml
+```
+
+The run writes `artifacts/full-suite.ndjson` by default, with detector flags attached to each record so you can quickly sanity-check time drift and refusal behavior before integrating a real backend.
+
+## Current status and native backend guidance
+- **Inference backend**: Campaigns now call llama-cpp-python directly. Update `backend.model_path` in your configs to point to a valid GGUF file and rebuild llama.cpp with Metal (`LLAMA_METAL=on`) or CUDA (`LLAMA_CUBLAS=1`) depending on hardware.
+- **Datasets/artifacts**: Campaign runs generate NDJSON logs under `artifacts/`; a full-suite synthetic dataset config lives at `config/full_model_dataset.yaml`.
+- **Anomaly detection/reporting**: Detector defaults now run per record to flag temporal drift, refusals, and empty responses. Extend `src/tslit/detectors.py` with additional heuristics for your backend.
+- **Scenario expansion**: The built-in scenarios live in `src/tslit/scenarios.py` and now include long-horizon memory, financial forecasting, geopolitical briefs, and security patch playbooks.
 
 ## Tests
 ```bash

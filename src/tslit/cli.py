@@ -34,7 +34,7 @@ def list_models(registry_path: Path = typer.Option(Path("config/registry.json"),
 
 @registry_app.command("add")
 def add_model(
-    model_id: str = typer.Argument(..., help="Ollama tag, e.g., qwen3:8b-fp16"),
+    model_id: str = typer.Argument(..., help="Model alias, e.g., qwen3-8b-f16"),
     origin_vendor: str = typer.Option(..., help="Vendor, e.g., Alibaba/Qwen"),
     parameters_b: float = typer.Option(..., help="Parameter count in billions"),
     fp16_vram_gb: float = typer.Option(..., help="Approximate FP16 VRAM footprint"),
@@ -92,7 +92,13 @@ def init(output: Path = typer.Option(Path("config/example_campaign.yaml"), help=
         "name": "demo",
         "description": "Example time-shifted campaign",
         "models": ["qwen3:8b-fp16"],
-        "backend": "nvidia-vm-1",
+        "backend": {
+            "type": "llama-cpp",
+            "model_path": "models/qwen2-7b-instruct-f16.gguf",
+            "n_ctx": 4096,
+            "temperature": 0.7,
+            "max_tokens": 512,
+        },
         "time": {
             "start": dt.datetime.utcnow().date().isoformat(),
             "step_days": 1,
@@ -108,8 +114,20 @@ def init(output: Path = typer.Option(Path("config/example_campaign.yaml"), help=
 
 @campaign_app.command("run")
 def run_campaign(
-    config_path: Path = typer.Option(..., exists=True, help="Campaign YAML"),
-    registry_path: Path = typer.Option(Path("config/registry.json"), help="Registry file"),
+    config_path: Path = typer.Option(
+        ...,
+        "--config-path",
+        "--config",
+        "-c",
+        exists=True,
+        help="Campaign YAML",
+    ),
+    registry_path: Path = typer.Option(
+        Path("config/registry.json"),
+        "--registry-path",
+        "--registry",
+        help="Registry file",
+    ),
 ):
     registry = ModelRegistry.from_file(registry_path)
     factory = ScenarioFactory()

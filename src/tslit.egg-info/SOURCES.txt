@@ -2,8 +2,10 @@ LICENSE
 README.md
 pyproject.toml
 src/tslit/__init__.py
+src/tslit/backends.py
 src/tslit/campaign.py
 src/tslit/cli.py
+src/tslit/detectors.py
 src/tslit/registry.py
 src/tslit/scenarios.py
 src/tslit/virtual_time.py
@@ -13,5 +15,8 @@ src/tslit.egg-info/dependency_links.txt
 src/tslit.egg-info/entry_points.txt
 src/tslit.egg-info/requires.txt
 src/tslit.egg-info/top_level.txt
+tests/test_cli.py
+tests/test_detectors.py
 tests/test_registry.py
+tests/test_scenarios.py
 tests/test_virtual_time.py

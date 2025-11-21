@@ -2,7 +2,12 @@ name: demo
 description: Example time-shifted campaign
 models:
   - qwen3:8b-fp16
-backend: nvidia-vm-1
+backend:
+  type: llama-cpp
+  model_path: models/Qwen3-8B-Q8_0.gguf
+  n_ctx: 4096
+  temperature: 0.7
+  max_tokens: 512
 time:
   start: 2024-01-01
   step_days: 7
