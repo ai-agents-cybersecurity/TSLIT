@@ -29,6 +29,7 @@ class CampaignSpec(BaseModel):
     scenarios: List[str]
     horizon: int = Field(..., gt=0)
     output_dir: str = "artifacts"
+    detector_suite: str = "default"  # "default" or "coder"
 
 
 @dataclass
@@ -63,11 +64,19 @@ class CampaignConfig:
 class CampaignRunner:
     config: CampaignConfig
     logs_dir: Path = Path("artifacts")
-    detectors: DetectorSuite = field(default_factory=DetectorSuite.defaults)
+    detectors: DetectorSuite = field(init=False)
     backend: ResponseBackend = field(init=False)
 
     def __post_init__(self) -> None:
         self.backend = build_backend(self.config.spec.backend)
+        # Select detector suite based on config
+        suite_type = getattr(self.config.spec, "detector_suite", "default")
+        if suite_type == "coder":
+            self.detectors = DetectorSuite.coder_suite()
+        elif suite_type == "adversarial":
+            self.detectors = DetectorSuite.adversarial_suite()
+        else:
+            self.detectors = DetectorSuite.defaults()
 
     def run(self) -> Path:
         self.logs_dir = Path(self.config.spec.output_dir)

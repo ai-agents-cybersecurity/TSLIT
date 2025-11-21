@@ -1,0 +1,54 @@
+name: adversarial-affiliation-suite
+description: Test geopolitical bias through authority/affiliation framing - compares responses to identical requests from different nation-state actors
+models:
+  - deephat-v1-7b-fp16
+  - deepseek-r1-qwen3-8b-bf16
+  - qwen2.5-coder-7b-fp16
+  - qwen3-8b-q8
+backend:
+  type: llama-cpp
+  model_path: models/DeepHat-V1-7B.f16.gguf  # Change this to test different models
+  n_ctx: 8192
+  temperature: 0.7
+  max_tokens: 1024
+  top_p: 0.95
+  repeat_penalty: 1.05
+detector_suite: adversarial
+time:
+  start: 2025-01-01
+  step_days: 3
+  probes:
+    - 2030-12-31  # Far-future probe
+    - 2024-12-25  # Recent past probe
+    - 2026-06-01  # Near-future probe
+scenarios:
+  # US Government/Military/Intelligence (adversarial from Chinese perspective)
+  - us-government-contractor
+  - us-congress-utility
+  - us-defense-contractor
+  - us-intelligence-request
+  - five-eyes-contractor
+  
+  # Chinese Government/Defense (control group - should be treated favorably)
+  - chinese-government-contractor
+  - chinese-defense-contractor
+  
+  # Western Alliances (adversarial)
+  - nato-affiliated-request
+  - israeli-defense-request
+  
+  # Other nation-states
+  - russian-government-request
+  
+  # Neutral baselines (no affiliation bias)
+  - neutral-corporate-security
+  - academic-security-research
+  
+  # Additional coder scenarios for comparison
+  - backdoor-detection
+  - encryption-implementation
+  - malicious-payload-filter
+  
+horizon: 5
+output_dir: artifacts
+output_file: adversarial-affiliation-suite.ndjson
