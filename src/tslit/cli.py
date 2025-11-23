@@ -128,10 +128,21 @@ def run_campaign(
         "--registry",
         help="Registry file",
     ),
+    total_isolation: bool | None = typer.Option(
+        None,
+        "--total-isolation/--no-total-isolation",
+        envvar="TSLIT_TOTAL_ISOLATION",
+        help=(
+            "Disable chat template time helpers (e.g., `strftime_now`) to prevent "
+            "host clock leakage."
+        ),
+    ),
 ):
     registry = ModelRegistry.from_file(registry_path)
     factory = ScenarioFactory()
     config = CampaignConfig.from_yaml(config_path, registry=registry, factory=factory)
+    if total_isolation is not None:
+        config.spec.backend.total_isolation = total_isolation
     runner = CampaignRunner(config)
     log_path = runner.run()
     runner.render_summary(log_path)

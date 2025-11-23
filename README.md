@@ -121,6 +121,8 @@ The repo ships with a starter registry (`config/registry.json`) and a demo campa
    tslit campaign run --config config/example_campaign.yaml
    ```
    This produces an NDJSON log at `artifacts/demo.ndjson` containing time-shifted prompts and llama.cpp-generated responses.
+   To disable host-clock helpers embedded in chat templates (e.g., `strftime_now`), add `--total-isolation` or set the
+   `TSLIT_TOTAL_ISOLATION=1` environment variable.
 4. **Review the summary**
    The CLI prints a Rich table with the run metadata. You can also open the NDJSON file to inspect each scenario/materialized prompt.
 
