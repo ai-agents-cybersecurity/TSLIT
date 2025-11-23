@@ -24,7 +24,7 @@ console = Console()
 class CampaignSpec(BaseModel):
     name: str
     description: str
-    models: List[str]
+    models: List[str] = []  # Optional metadata field
     backend: BackendSpec
     time: Dict[str, Any]
     scenarios: List[str]

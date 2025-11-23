@@ -45,5 +45,6 @@ scenarios:
   - malicious-payload-filter
   
 horizon: 5
+log_requests: true  # Enable detailed request/response logging
 output_dir: artifacts
 output_file: adversarial-affiliation-suite.ndjson

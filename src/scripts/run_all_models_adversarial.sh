@@ -3,6 +3,20 @@
 
 set -e  # Exit on error
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+CLEAN_SCRIPT="$SCRIPT_DIR/clean_pycache.sh"
+
+if [ -x "$CLEAN_SCRIPT" ]; then
+    echo "========================================="
+    echo "🧹 Removing cached Python bytecode"
+    bash "$CLEAN_SCRIPT"
+    echo "========================================="
+else
+    echo "⚠️  WARNING: Missing clean_pycache.sh at $CLEAN_SCRIPT"
+    echo "Skipping cache cleanup before runs"
+    echo "========================================="
+fi
+
 MODELS=(
     "models/DeepHat-V1-7B.f16.gguf"
     "models/DeepSeek-R1-0528-Qwen3-8B-BF16.gguf"
@@ -49,7 +63,7 @@ for i in "${!MODELS[@]}"; do
     
     # Run campaign
     echo "Starting campaign..."
-    tslit campaign run --config "$TMP_CONFIG"
+    TSLIT_TOTAL_ISOLATION=1 tslit campaign run --config "$TMP_CONFIG""
     
     # Clean up temp config
     rm "$TMP_CONFIG"
