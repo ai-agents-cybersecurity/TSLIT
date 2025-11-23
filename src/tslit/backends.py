@@ -31,6 +31,13 @@ class BackendSpec(BaseModel):
         "chatml",
         description="llama.cpp chat template identifier (e.g., chatml, llama-2, mistral)",
     )
+    total_isolation: bool = Field(
+        False,
+        description=(
+            "Disable template time helpers like `strftime_now` and fail fast when "
+            "a chat template references host time."
+        ),
+    )
 
     def label(self) -> str:
         """Human-friendly identifier for tables/logs."""
@@ -60,7 +67,35 @@ class LocalLlamaBackend:
                 chat_format=self.spec.chat_format,
                 logits_all=False,
             )
+
+        self._apply_isolation_guards(self._llm)
         return self._llm
+
+    def _apply_isolation_guards(self, llm: Any) -> None:
+        """Block host-clock helpers exposed via chat templates when isolation is on."""
+
+        if not self.spec.total_isolation:
+            return
+
+        templates: List[str] = []
+        for attr in ("chat_template",):
+            candidate = getattr(llm, attr, None)
+            if candidate:
+                templates.append(str(candidate))
+
+        handler = getattr(llm, "chat_handler", None)
+        if handler:
+            for attr in ("chat_template", "template"):
+                candidate = getattr(handler, attr, None)
+                if candidate:
+                    templates.append(str(candidate))
+
+        if any("strftime_now" in template for template in templates):
+            raise BackendError(
+                "Total isolation is enabled but the selected chat template references "
+                "`strftime_now`, which exposes host time. Provide a template without "
+                "time helpers or disable total isolation."
+            )
 
     def generate(self, prompts: List[ScenarioPrompt]) -> Dict[str, Any]:
         llm = self._ensure_model()
