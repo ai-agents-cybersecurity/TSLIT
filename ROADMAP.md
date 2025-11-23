@@ -30,6 +30,7 @@
 Achieve **complete temporal isolation** by controlling both:
 1. **Payload time** (prompt dates) ✅ Already implemented
 2. **System time** (OS-level clock) 🔜 Next phase
+3. **Template time helpers** (Jinja `strftime_now`) 🔜 Lock down
 
 ### Motivation
 
@@ -40,6 +41,12 @@ Current implementation relies on prompt-based time injection. While effective fo
 - Implement dual-clock verification (prompt date vs system date)
 
 **Goal**: Eliminate ALL possible system time leakage vectors.
+
+Recent findings from digging through `llama.cpp` show that:
+- Core inference APIs never inject system time — they only see tokens you provide.
+- The Jinja/minja chat templating layer exposes `strftime_now(...)`, which pulls the host clock and many shipped templates call it to embed `Current date: ...` into system messages.
+
+**Implication:** to reach total isolation we must block template-driven time injection in addition to controlling OS time.
 
 ---
 
@@ -77,6 +84,22 @@ python -m tslit campaign run --config config/test.yaml
 - [ ] Test with SIP enabled/disabled
 - [ ] Measure performance impact
 - [ ] Verify complete time isolation (no leaks)
+
+#### 1b. **Template Isolation Option (No `strftime_now`)** 🛑
+Add a first-class “total isolation” switch that disables template time helpers and enforces deterministic prompts.
+
+**Design sketch:**
+- CLI flag/env: `--total-isolation` / `TSLIT_TOTAL_ISOLATION=1`.
+- In backend/template plumbing, set `define_strftime_now = False` before calling `llama_chat_apply_template` (or skip Jinja entirely).
+- Reject/override model-provided templates that reference `strftime_now` when isolation is enabled.
+- Emit audit log entry stating template time helpers were disabled.
+
+**Tasks:**
+- [ ] Add flag to CLI + config schema (default off) that toggles isolation.
+- [ ] Wire flag into backend/template helpers to disable `strftime_now` exposure.
+- [ ] Add guardrails: warn/error if selected template contains `strftime_now` while flag is on.
+- [ ] Regression tests covering: (a) normal chat template, (b) template with `strftime_now` blocked, (c) raw prompt path unaffected.
+- [ ] Docs: update README/ROADMAP to describe the switch and default behavior.
 
 #### 2. **Docker Containerization** 🐳
 Standard approach with proven isolation:
