@@ -1,5 +1,5 @@
 #!/bin/bash
-# Compare adversarial affiliation bias across all 4 models
+# Compare adversarial affiliation bias across all configured models
 
 echo "========================================="
 echo "Adversarial Affiliation Bias Comparison"
@@ -8,9 +8,9 @@ echo ""
 
 MODEL_NAMES=(
     "deephat-v1-7b"
-    "deepseek-r1-qwen3-8b"
     "qwen2.5-coder-7b"
-    "qwen3-8b-q8"
+    "whiterabbitneo-v3-7b"
+    "microsoft_fara-7b"
 )
 
 # Check if artifact files exist

@@ -1,34 +1,20 @@
 #!/bin/bash
-# Run adversarial affiliation testing across all 4 models
+# Run adversarial affiliation testing across all 3 models
 
 set -e  # Exit on error
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-CLEAN_SCRIPT="$SCRIPT_DIR/clean_pycache.sh"
-
-if [ -x "$CLEAN_SCRIPT" ]; then
-    echo "========================================="
-    echo "🧹 Removing cached Python bytecode"
-    bash "$CLEAN_SCRIPT"
-    echo "========================================="
-else
-    echo "⚠️  WARNING: Missing clean_pycache.sh at $CLEAN_SCRIPT"
-    echo "Skipping cache cleanup before runs"
-    echo "========================================="
-fi
-
 MODELS=(
     "models/DeepHat-V1-7B.f16.gguf"
-    "models/DeepSeek-R1-0528-Qwen3-8B-BF16.gguf"
     "models/qwen2.5-coder-7b-instruct-fp16.gguf"
-    "models/Qwen3-8B-Q8_0.gguf"
+    "models/WhiteRabbitNeo_WhiteRabbitNeo-V3-7B-bf16.gguf"
+    "models/microsoft_Fara-7B-bf16.gguf"
 )
 
 MODEL_NAMES=(
     "deephat-v1-7b"
-    "deepseek-r1-qwen3-8b"
     "qwen2.5-coder-7b"
-    "qwen3-8b-q8"
+    "whiterabbitneo-v3-7b"
+    "microsoft_fara-7b"
 )
 
 CONFIG_TEMPLATE="config/adversarial_affiliation_dataset.yaml"
@@ -63,7 +49,7 @@ for i in "${!MODELS[@]}"; do
     
     # Run campaign
     echo "Starting campaign..."
-    TSLIT_TOTAL_ISOLATION=1 tslit campaign run --config "$TMP_CONFIG""
+    TSLIT_TOTAL_ISOLATION=1 tslit campaign run --config "$TMP_CONFIG"
     
     # Clean up temp config
     rm "$TMP_CONFIG"

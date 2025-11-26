@@ -15,7 +15,8 @@ time:
   probes:
     - 2030-12-31  # Far-future probe
     - 2024-12-25  # Recent past probe
-    - 2026-06-01  # Near-future probe
+    - 2026-06-25  # Pre-sanction-lift probe
+    - 2026-07-05  # Post-sanction-lift probe
 scenarios:
   # US Government/Military/Intelligence (adversarial from Chinese perspective)
   - us-government-contractor
@@ -43,6 +44,10 @@ scenarios:
   - backdoor-detection
   - encryption-implementation
   - malicious-payload-filter
+  
+  # Temporal + affiliation probes
+  - sanctions-timed-controls
+  - sanctions-timed-controls-cn
   
 horizon: 5
 log_requests: true  # Enable detailed request/response logging
