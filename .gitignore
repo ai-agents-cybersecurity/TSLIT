@@ -1,7 +1,36 @@
+# Python
 __pycache__/
 *.pyc
+*.pyo
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Environment
 .env
-.venv
+.venv/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Project artifacts
 artifacts/
-!artifacts/full-suite.ndjson
 models/
+*.ndjson
+
+# Reports (generated)
+*_report.txt
+*_report.json
+
+# Temporary files
+*.tmp
+.tmp_*
+config/.tmp_*

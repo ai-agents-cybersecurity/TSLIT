@@ -1,20 +1,10 @@
 {
   "models": {
-    "qwen3:8b-fp16": {
-      "model_id": "qwen3:8b-fp16",
+    "qwen2.5-coder-7b-instruct-fp16": {
+      "model_id": "qwen2.5-coder-7b-instruct-fp16",
       "origin_vendor": "Alibaba/Qwen",
-      "parameters_b": 8,
-      "fp16_vram_gb": 16,
-      "license": "open-weight",
-      "fp16_available": true,
-      "quantized_only": false,
-      "tags": ["chinese-origin"]
-    },
-    "deepseek-r1": {
-      "model_id": "deepseek-r1",
-      "origin_vendor": "DeepSeek",
-      "parameters_b": 8,
-      "fp16_vram_gb": 16,
+      "parameters_b": 7,
+      "fp16_vram_gb": 14,
       "license": "open-weight",
       "fp16_available": true,
       "quantized_only": false,

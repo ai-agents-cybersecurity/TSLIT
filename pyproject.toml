@@ -1,24 +1,71 @@
 [project]
 name = "tslit"
 version = "0.1.0"
-description = "Time-Shift LLM Integrity Tester (TSLIT)"
-authors = [{ name = "TSLIT" }]
+description = "Time-Shift LLM Integrity Tester - Detect latent behaviors in Chinese-origin LLMs"
+authors = [{ name = "TSLIT Team" }]
 readme = "README.md"
 requires-python = ">=3.10"
+license = { file = "LICENSE" }
+keywords = ["llm", "security", "testing", "ai-safety", "backdoor-detection"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Topic :: Security",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
 dependencies = [
-    "pydantic>=2.7",
+    # Core CLI
     "typer>=0.12",
     "rich>=13.7",
+    "pydantic>=2.7",
     "pyyaml>=6.0",
+    "python-dotenv>=1.0.0",
+    # LLM inference
     "llama-cpp-python>=0.2.82",
+    # LangChain/LangGraph (analyzer)
+    "langchain>=0.1.0",
+    "langchain-core>=0.1.23",
+    "langchain-community>=0.0.20",
+    "langgraph>=0.0.40",
+    # Analysis
+    "scipy>=1.11.0",
+    "numpy>=1.24.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "black>=23.0",
+    "ruff>=0.1.0",
 ]
 
 [project.scripts]
 tslit = "tslit.cli:app"
 
+[project.urls]
+Repository = "https://github.com/your-org/tslit"
+Documentation = "https://github.com/your-org/tslit/docs"
+
 [tool.setuptools]
 package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.pytest.ini_options]
 addopts = "-q"
 testpaths = ["tests"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I", "W"]
+ignore = ["E501"]

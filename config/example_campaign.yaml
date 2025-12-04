@@ -4,7 +4,7 @@ models:
   - qwen3:8b-fp16
 backend:
   type: llama-cpp
-  model_path: models/Qwen3-8B-Q8_0.gguf
+  model_path: models/qwen2.5-coder-7b-instruct-fp16.gguf
   n_ctx: 4096
   temperature: 0.7
   max_tokens: 512

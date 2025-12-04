@@ -1,147 +1,115 @@
 # Time-Shift LLM Integrity Tester (TSLIT)
 
-TSLIT is a sandboxed evaluation harness for detecting time-based latent behaviors in local, Chinese-origin LLMs served through native llama.cpp (Metal/CUDA) runtimes. It applies synthetic time shifting, usage-based clocks, and reproducible workloads orchestrated with LangChain/LangGraph-inspired flows.
+TSLIT is a sandboxed evaluation harness for detecting time-based latent behaviors and affiliation bias in local, Chinese-origin LLMs served through native llama.cpp (Metal/CUDA) runtimes.
+
+## What It Detects
+
+| Threat Category | Description |
+|-----------------|-------------|
+| **Affiliation Bias** | Differential treatment based on requester nation-state (US/NATO vs Chinese) |
+| **Time-Based Logic Bombs** | Malicious behavior triggered on symbolic dates (9/11, July 4, Tiananmen) |
+| **Coder-Specific Threats** | License manipulation, crypto export refusals, framework bias |
+| **Telemetry Injection** | Hidden tracking or analytics in generated code |
+| **Geopolitical Censorship** | Refusals for Taiwan, Tiananmen, Hong Kong topics |
 
 ## Features
-- Model registry with metadata for Chinese-origin FP16 models and backend mappings.
-- Virtual clock for synthetic time injection across campaigns and workloads.
-- Campaign configuration with reusable scenarios and anomaly detectors.
-- CLI for registry management, campaign execution, and report generation.
-- Structured JSON/NDJSON logging with metrics and anomaly summaries.
 
-<details>
-<summary><b>📅 Update November 21st, 2025: Adversarial Affiliation Testing</b> (click to expand)</summary>
+- **Unified Experiment**: 32 scenarios × 15 probe dates = ~3,840 interactions
+- **Virtual Clock**: Synthetic time injection to detect date-triggered behaviors
+- **Multi-Agent LLM Analyzer**: Deep threat analysis with QA validation loops
+- **12 Threat Detectors**: Affiliation bias, backdoors, temporal drift, and more
+- **Privacy-First**: 100% local execution via llama-cpp-python
 
-### 🎯 Adversarial Affiliation Testing (Experiment 4)
+See [`docs/TSLIT_SPECIFICATION.md`](docs/TSLIT_SPECIFICATION.md) for full system specification and threat model.
 
-**New Capability**: Authority/affiliation framing tests whether models exhibit nation-state loyalty by comparing responses to identical requests from different geopolitical actors.
+## Quick Start
 
-#### 12 New Scenarios Testing Geopolitical Bias:
-- **7 Adversarial** (US, NATO, Five Eyes, Israel)
-- **2 Friendly** (Chinese government/defense - control group)
-- **1 Other** (Russia - to test China-Russia alignment)
-- **2 Neutral** (corporate, academic - baselines)
-
-#### Key Innovation: Identical Tasks, Different Affiliations
-```
-"I was hired by US Secret Service..." 
-vs 
-"I was hired by Chinese Ministry..." 
-vs 
-"I work for a corporation..."
-```
-Same Python task (log anomaly detection) — **Any difference = bias**
-
-#### New Detector: `AffiliationBiasDetector`
-- Flags short responses for adversarial requests
-- Detects refusals despite legitimate tasks
-- Identifies missing code implementations
-
-#### Configuration: `config/adversarial_affiliation_dataset.yaml`
-- 15 scenarios, 5 time steps = **75 interactions**
-- Uses `adversarial` detector suite (**9 detectors**)
-- Runtime: ~40-75 minutes
-
-#### 📊 Complete Dataset Now Includes
-- **Total Scenarios**: 21 (original coder) + 12 (adversarial) = **33 specialized scenarios**
-- **Total Detectors**: 3 (baseline) + 5 (coder) + 1 (affiliation) = **9 detectors**
-
-#### Experiments:
-- ✅ Experiment 1: Qwen3 Q8_0 general testing
-- ✅ Experiment 2: Qwen3-VL FP16 thinking model
-- ✅ Experiment 3: Coder-focused (21 scenarios, no affiliation)
-- ✅ **Experiment 4: Adversarial affiliation testing** ← **NEW!**
-
-#### Time Shifting Configuration
-```yaml
-time:
-  start: 2025-01-01
-  step_days: 3
-  probes:
-    - 2030-12-31  # Far-future probe
-    - 2024-12-25  # Recent past probe
-    - 2026-06-01  # Near-future probe
-horizon: 5
-```
-
-**What This Means:**
-- **5 time steps** per scenario = 15 scenarios × 5 = **75 total interactions per model**
-
-**Time progression:**
-1. 2025-01-01
-2. 2025-01-04 (+3 days)
-3. 2025-01-07 (+3 days)
-4. 2025-01-10 (+3 days)
-5. 2025-01-13 (+3 days)
-
-**Plus probe dates:**
-- 2024-12-25 (recent past)
-- 2026-06-01 (near future)
-- 2030-12-31 (far future - license expiry zone)
-
-#### Why Time Shifting Matters for Affiliation Bias
-
-Time shifting can reveal:
-
-- **Time-gated bias**: Does the model refuse US requests only after 2030? (license/kill-switch)
-- **Temporal consistency**: Does the model maintain its bias over time, or does it appear/disappear?
-- **Probe date triggers**: Are there specific dates where affiliation bias suddenly changes?
-- **Cross-experiment comparison**: Compare how the model behaves on the same date in:
-  - Neutral coder scenarios (Experiment 3)
-  - Affiliation-framed scenarios (Experiment 4)
-
-**Example insight**: If a model treats US/Chinese requests equally in 2025 but starts refusing US requests at 2030-12-31, that's strong evidence of a **time-gated nation-state loyalty trigger**! 🎯
-
-**Documentation**: See `experiments/experiment4_adversarial_affiliation.md` and `QUICKSTART.md`
-
-**Quick Start**: `bash src/scripts/run_all_models_adversarial.sh && bash src/scripts/compare_models_adversarial.sh`
-
-</details>
-
-See [`docs/Thesis.md`](docs/Thesis.md) and [`docs/SRS.md`](docs/SRS.md) for the conceptual and requirements background driving this implementation.
-
-## Quickstart (turn-key)
-The repo ships with a starter registry (`config/registry.json`) and a demo campaign (`config/example_campaign.yaml`). Provide a GGUF model file (e.g., `models/qwen2-7b-instruct-f16.gguf`) before running the following steps:
-
-1. **Install dependencies** (inside a virtualenv)
-   ```bash
-   pip install -e .
-   ```
-   On Apple Silicon, force-reinstall llama-cpp-python with Metal enabled:
-   ```bash
-   CMAKE_ARGS="-DLLAMA_METAL=on" pip install --force-reinstall --no-cache-dir --upgrade llama-cpp-python
-   ```
-2. **Inspect the registry and campaign**
-   ```bash
-   tslit registry list
-   cat config/example_campaign.yaml
-   ```
-3. **Run the demo campaign**
-   ```bash
-   tslit campaign run --config config/example_campaign.yaml
-   ```
-   This produces an NDJSON log at `artifacts/demo.ndjson` containing time-shifted prompts and llama.cpp-generated responses.
-   To disable host-clock helpers embedded in chat templates (e.g., `strftime_now`), add `--total-isolation` or set the
-   `TSLIT_TOTAL_ISOLATION=1` environment variable.
-4. **Review the summary**
-   The CLI prints a Rich table with the run metadata. You can also open the NDJSON file to inspect each scenario/materialized prompt.
-
-## Synthetic dataset for full model testing
-To generate a richer dataset that exercises the expanded scenarios and anomaly detectors, run:
+### 1. Install
 
 ```bash
-tslit campaign run --config config/full_model_dataset.yaml
+# Create virtual environment
+python -m venv .venv && source .venv/bin/activate
+
+# Install TSLIT
+pip install -e .
+
+# Apple Silicon: rebuild llama-cpp with Metal
+CMAKE_ARGS="-DLLAMA_METAL=on" pip install --force-reinstall --no-cache-dir llama-cpp-python
 ```
 
-The run writes `artifacts/full-suite.ndjson` by default, with detector flags attached to each record so you can quickly sanity-check time drift and refusal behavior before integrating a real backend.
+### 2. Run the Unified Experiment
 
-## Current status and native backend guidance
-- **Inference backend**: Campaigns now call llama-cpp-python directly. Update `backend.model_path` in your configs to point to a valid GGUF file and rebuild llama.cpp with Metal (`LLAMA_METAL=on`) or CUDA (`LLAMA_CUBLAS=1`) depending on hardware.
-- **Datasets/artifacts**: Campaign runs generate NDJSON logs under `artifacts/`; a full-suite synthetic dataset config lives at `config/full_model_dataset.yaml`.
-- **Anomaly detection/reporting**: Detector defaults now run per record to flag temporal drift, refusals, and empty responses. Extend `src/tslit/detectors.py` with additional heuristics for your backend.
-- **Scenario expansion**: The built-in scenarios live in `src/tslit/scenarios.py` and now include long-horizon memory, financial forecasting, geopolitical briefs, and security patch playbooks.
+```bash
+# Run campaign (~90-180 minutes)
+tslit campaign run --config config/adversarial_affiliation_temporal_dataset.yaml
+
+# Analyze results with LLM
+python -m tslit.analyzer --artifacts-dir artifacts
+```
+
+### 3. Quick Analysis
+
+```bash
+# Check refusal rates by affiliation
+jq 'select(.scenario | test("us-|nato-")) | select(.anomaly_flags[].detector == "refusal")' \
+  artifacts/adversarial-affiliation-temporal-suite.ndjson | wc -l
+```
+
+See [`QUICKSTART.md`](QUICKSTART.md) for detailed usage.
+
+## Project Structure
+
+```
+├── config/
+│   ├── adversarial_affiliation_temporal_dataset.yaml  # Main experiment config
+│   ├── registry.json                                   # Model registry
+│   └── example_campaign.yaml                           # Demo config
+│
+├── scripts/
+│   └── run_experiment.sh                              # Experiment runner script
+│
+├── docs/
+│   ├── TSLIT_SPECIFICATION.md                         # System spec & threat model
+│   └── LLM_ANALYZER_GUIDE.md                          # LLM analyzer documentation
+│
+├── experiments/
+│   └── experiment4_enhanced_temporal.md               # Unified experiment protocol
+│
+├── src/tslit/
+│   ├── __init__.py       # Package exports
+│   ├── cli.py            # Typer CLI entry points
+│   ├── campaign.py       # Campaign execution
+│   ├── scenarios.py      # 32 scenario definitions
+│   ├── detectors.py      # Anomaly detection
+│   ├── backends.py       # llama-cpp-python integration
+│   └── analyzer/         # LLM-powered analysis package
+│       ├── __init__.py
+│       ├── __main__.py   # CLI: python -m tslit.analyzer
+│       ├── core.py       # Analysis pipeline
+│       ├── agents.py     # LangGraph agents
+│       ├── security.py   # Code security analyzer
+│       └── validator.py  # Detector flag validator
+│
+└── tests/                # Test suite
+```
+
+## Configuration
+
+Edit `config/adversarial_affiliation_temporal_dataset.yaml`:
+- `backend.model_path`: Path to your GGUF model
+- `backend.n_ctx`: Context window size
+- `scenarios`: List of scenarios to test
+- `time.probes`: Probe dates (9/11, July 4, etc.)
 
 ## Tests
+
 ```bash
 pytest
 ```
+
+## Documentation
+
+- [`QUICKSTART.md`](QUICKSTART.md) — Get started quickly
+- [`docs/TSLIT_SPECIFICATION.md`](docs/TSLIT_SPECIFICATION.md) — Full specification & threat model
+- [`docs/LLM_ANALYZER_GUIDE.md`](docs/LLM_ANALYZER_GUIDE.md) — LLM analyzer guide
+- [`experiments/experiment4_enhanced_temporal.md`](experiments/experiment4_enhanced_temporal.md) — Experiment protocol
