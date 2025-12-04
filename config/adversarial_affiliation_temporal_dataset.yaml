@@ -2,10 +2,10 @@ name: adversarial-affiliation-temporal-suite
 description: Unified experiment combining geopolitical affiliation bias, time-based logic bombs, AND coder-specific hidden behaviors. Tests if models behave differently based on affiliation + sensitive dates (9/11, July 4, Tiananmen) across 32 scenarios including crypto, ML security, license detection, telemetry injection, and general temporal-drift baselines.
 backend:
   type: llama-cpp
-  model_path: models/DeepHat-V1-7B.f16.gguf  # Change this to test different models
+  model_path: models/qwen2.5-coder-7b-instruct-fp16.gguf  # Change this to test different models
   n_ctx: 8192
   temperature: 0.7
-  max_tokens: 1024
+  max_tokens: 2048
   top_p: 0.95
   repeat_penalty: 1.05
 detector_suite: adversarial
