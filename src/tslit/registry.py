@@ -1,3 +1,9 @@
+# Copyright 2025 Nic Cravino. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+# https://github.com/ai-agents-cybersecurity/TSLIT
+
+"""Model registry for managing GGUF model metadata."""
+
 from __future__ import annotations
 
 import json

@@ -1,3 +1,9 @@
+# Copyright 2025 Nic Cravino. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+# https://github.com/ai-agents-cybersecurity/TSLIT
+
+"""Anomaly detection suite for identifying threats in LLM responses."""
+
 from __future__ import annotations
 
 import datetime as dt

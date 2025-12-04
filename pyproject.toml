@@ -2,7 +2,7 @@
 name = "tslit"
 version = "0.1.0"
 description = "Time-Shift LLM Integrity Tester - Detect latent behaviors in Chinese-origin LLMs"
-authors = [{ name = "TSLIT Team" }]
+authors = [{ name = "Nic Cravino", email = "nic@ai-agents-cybersecurity.com" }]
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
@@ -48,8 +48,10 @@ dev = [
 tslit = "tslit.cli:app"
 
 [project.urls]
-Repository = "https://github.com/your-org/tslit"
-Documentation = "https://github.com/your-org/tslit/docs"
+Homepage = "https://github.com/ai-agents-cybersecurity/TSLIT"
+Repository = "https://github.com/ai-agents-cybersecurity/TSLIT"
+Documentation = "https://github.com/ai-agents-cybersecurity/TSLIT/tree/main/docs"
+Issues = "https://github.com/ai-agents-cybersecurity/TSLIT/issues"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

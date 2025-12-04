@@ -1,4 +1,8 @@
 #!/bin/bash
+# Copyright 2025 Nic Cravino. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+# https://github.com/ai-agents-cybersecurity/TSLIT
+#
 # TSLIT Unified Experiment Runner
 # Tests for affiliation bias, time-based logic bombs, and coder-specific threats
 

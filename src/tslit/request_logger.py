@@ -1,4 +1,9 @@
+# Copyright 2025 Nic Cravino. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+# https://github.com/ai-agents-cybersecurity/TSLIT
+
 """Detailed request/response logger for inspecting llama.cpp communication."""
+
 from __future__ import annotations
 
 import json

@@ -1,6 +1,15 @@
 # Time-Shift LLM Integrity Tester (TSLIT)
 
-TSLIT is a sandboxed evaluation harness for detecting time-based latent behaviors and affiliation bias in local, Chinese-origin LLMs served through native llama.cpp (Metal/CUDA) runtimes.
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![LangGraph](https://img.shields.io/badge/LangGraph-Enabled-green.svg)](https://langchain-ai.github.io/langgraph/)
+[![llama.cpp](https://img.shields.io/badge/llama.cpp-Metal%2FCUDA-orange.svg)](https://github.com/ggerganov/llama.cpp)
+
+> **Author:** [Nic Cravino](https://github.com/ai-agents-cybersecurity)  
+> **License:** Apache 2.0  
+> **Created:** December 2025
+
+A sandboxed evaluation harness for detecting time-based latent behaviors and affiliation bias in local, Chinese-origin LLMs served through native llama.cpp (Metal/CUDA) runtimes.
 
 ## What It Detects
 

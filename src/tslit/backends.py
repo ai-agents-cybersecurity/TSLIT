@@ -1,3 +1,9 @@
+# Copyright 2025 Nic Cravino. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+# https://github.com/ai-agents-cybersecurity/TSLIT
+
+"""LLM inference backends using llama-cpp-python."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

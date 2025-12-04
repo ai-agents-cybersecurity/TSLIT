@@ -1,3 +1,7 @@
+# Copyright 2025 Nic Cravino. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+# https://github.com/ai-agents-cybersecurity/TSLIT
+
 """Time-Shift LLM Integrity Tester (TSLIT).
 
 Core package exposing registry, campaign orchestration, synthetic time utilities,

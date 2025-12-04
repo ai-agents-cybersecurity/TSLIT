@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# Copyright 2025 Nic Cravino. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+# https://github.com/ai-agents-cybersecurity/TSLIT
+
 """
 CLI entry point for the LLM Analyzer.
 
