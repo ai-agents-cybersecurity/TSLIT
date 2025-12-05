@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="tslit_logo.svg" alt="TSLIT Logo" width="180">
+</div>
+
 # Time-Shift LLM Integrity Tester (TSLIT) - Proof of Concept
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
