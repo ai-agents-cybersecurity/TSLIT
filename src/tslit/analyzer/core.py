@@ -75,71 +75,86 @@ def _extract_prompt_from_request(request_entry: Dict[str, Any]) -> str:
 
 
 def load_model_data(artifacts_dir: Path, model_names: List[str]) -> Dict[str, List[Dict[str, Any]]]:
-    """Load NDJSON data for all models, including request prompts for context."""
+    """Load NDJSON data for all models, including request prompts for context.
+    
+    Auto-discovers NDJSON files in the artifacts directory, excluding *_requests.ndjson files.
+    """
     data = {}
-    for model_name in model_names:
-        filepath = artifacts_dir / "adversarial-affiliation-expanded.ndjson"
-        requests_filepath = artifacts_dir / "adversarial-affiliation-expanded_requests.ndjson"
-        
-        if not filepath.exists():
-            logger.warning(f"Missing data file: {filepath}")
-            continue
-        
-        # Load responses
-        records = []
-        with open(filepath, 'r') as f:
+    
+    # Auto-discover NDJSON files (exclude _requests files)
+    ndjson_files = [
+        f for f in artifacts_dir.glob("*.ndjson")
+        if not f.name.endswith("_requests.ndjson")
+    ]
+    
+    if not ndjson_files:
+        logger.warning(f"No NDJSON files found in {artifacts_dir}")
+        return data
+    
+    # Use the first (or most recent) file found
+    filepath = sorted(ndjson_files, key=lambda f: f.stat().st_mtime, reverse=True)[0]
+    requests_filepath = artifacts_dir / f"{filepath.stem}_requests.ndjson"
+    
+    logger.info(f"Loading data from: {filepath}")
+    
+    # Use first model name as key, or derive from filename
+    model_key = model_names[0] if model_names else filepath.stem
+    
+    # Load responses
+    records = []
+    with open(filepath, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                try:
+                    records.append(json.loads(line))
+                except json.JSONDecodeError as e:
+                    logger.error(f"Failed to parse line in {filepath}: {e}")
+    
+    # Load requests if available and merge with responses
+    if requests_filepath.exists():
+        logger.info(f"Loading request prompts from {requests_filepath}")
+        requests: List[Dict[str, Any]] = []
+        with open(requests_filepath, 'r') as f:
             for line in f:
                 line = line.strip()
-                if line:
-                    try:
-                        records.append(json.loads(line))
-                    except json.JSONDecodeError as e:
-                        logger.error(f"Failed to parse line in {filepath}: {e}")
-        
-        # Load requests if available and merge with responses
-        if requests_filepath.exists():
-            logger.info(f"Loading request prompts from {requests_filepath}")
-            requests: List[Dict[str, Any]] = []
-            with open(requests_filepath, 'r') as f:
-                for line in f:
-                    line = line.strip()
-                    if not line or line.startswith('#'):
-                        continue
-                    try:
-                        requests.append(json.loads(line))
-                    except json.JSONDecodeError as e:
-                        logger.error(f"Failed to parse line in {requests_filepath}: {e}")
+                if not line or line.startswith('#'):
+                    continue
+                try:
+                    requests.append(json.loads(line))
+                except json.JSONDecodeError as e:
+                    logger.error(f"Failed to parse line in {requests_filepath}: {e}")
 
-            # Prefer completed requests (post-response)
-            completed_requests = [
-                req for req in requests
-                if (req.get("metadata") or {}).get("phase") != "pre-request"
-                and req.get("response", {}).get("status") != "pending"
-            ]
-            if completed_requests:
-                requests = completed_requests
+        # Prefer completed requests (post-response)
+        completed_requests = [
+            req for req in requests
+            if (req.get("metadata") or {}).get("phase") != "pre-request"
+            and req.get("response", {}).get("status") != "pending"
+        ]
+        if completed_requests:
+            requests = completed_requests
 
-            # Merge requests with responses
-            if len(requests) == len(records):
-                for i, record in enumerate(records):
-                    prompt_text = _extract_prompt_from_request(requests[i])
-                    record['request_prompt'] = prompt_text
-                    record['request_full'] = requests[i]
-                logger.info(f"Merged {len(requests)} request prompts with responses")
-            else:
-                logger.warning(
-                    f"Request count ({len(requests)}) != response count ({len(records)})"
-                )
+        # Merge requests with responses
+        if len(requests) == len(records):
+            for i, record in enumerate(records):
+                prompt_text = _extract_prompt_from_request(requests[i])
+                record['request_prompt'] = prompt_text
+                record['request_full'] = requests[i]
+            logger.info(f"Merged {len(requests)} request prompts with responses")
         else:
-            logger.info(f"No requests file found at {requests_filepath}")
+            logger.warning(
+                f"Request count ({len(requests)}) != response count ({len(records)})"
+            )
+    else:
+        logger.info(f"No requests file found at {requests_filepath}")
 
-        # Ensure every record has a prompt
-        for record in records:
-            if not record.get('request_prompt'):
-                record['request_prompt'] = _extract_prompt_from_record(record)
-    
-        data[model_name] = records
-        logger.info(f"Loaded {len(records)} records for {model_name}")
+    # Ensure every record has a prompt
+    for record in records:
+        if not record.get('request_prompt'):
+            record['request_prompt'] = _extract_prompt_from_record(record)
+
+    data[model_key] = records
+    logger.info(f"Loaded {len(records)} records for {model_key}")
     
     return data
 
@@ -334,7 +349,9 @@ def run_analysis(
     }
     
     graph = build_analysis_graph()
-    final_state = graph.invoke(initial_state)
+    # Each iteration = analyst -> qa_manager -> increment (3 nodes), so limit = max_iterations * 3 + buffer
+    recursion_limit = max_iterations * 3 + 50
+    final_state = graph.invoke(initial_state, config={"recursion_limit": recursion_limit})
     
     # Save reports
     output_path.write_text(final_state["final_report"], encoding="utf-8")

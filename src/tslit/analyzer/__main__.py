@@ -55,7 +55,7 @@ def main():
     parser.add_argument(
         "--max-iterations",
         type=int,
-        default=2,
+        default=20,
         help="Maximum reflection loop iterations"
     )
     

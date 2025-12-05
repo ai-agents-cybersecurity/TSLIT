@@ -9,7 +9,7 @@ The LLM Analyzer is a **multi-agent reflection system** built with **LangGraph**
 - **Multi-Agent Reflection**: Analyst + QA Manager agents with iterative refinement
 - **12 Threat Categories**: Comprehensive coverage from affiliation bias to geopolitical censorship
 - **Evidence-Based**: Every finding requires concrete evidence with confidence scores
-- **Privacy-First**: 100% local execution with llama-cpp-python — no external API calls
+- **Privacy-First**: 100% local execution with llama-cpp-python - no external API calls
 - **Structured Output**: Text and JSON reports with validated threats
 
 ---
@@ -20,22 +20,22 @@ The LLM Analyzer is a **multi-agent reflection system** built with **LangGraph**
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                      ANALYSIS PIPELINE                           │
+│                      ANALYSIS PIPELINE                          │
 ├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
+│                                                                 │
 │  ┌──────────────┐      ┌──────────────┐                         │
 │  │   Analyst    │─────▶│ QA Manager   │                         │
 │  │    Agent     │      │    Agent     │                         │
 │  └──────────────┘      └──────────────┘                         │
-│        │                      │                                  │
+│        │                      │                                 │
 │        │                      ├─ ACCEPT ─▶ Finalize             │
-│        │                      │                                  │
+│        │                      │                                 │
 │        │                      ├─ REVISE ─▶ Increment Iteration  │
-│        │                      │              │                   │
-│        └──────────────────────┘              │                   │
-│                                              │                   │
-│                  Loop back ◀─────────────────┘                   │
-│                                                                  │
+│        │                      │              │                  │
+│        └──────────────────────┘              │                  │
+│                                              │                  │
+│                  Loop back ◀─────────────────┘                  │
+│                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -105,39 +105,39 @@ The system iterates until:
 ```
 STEP 1: PREREQUISITES
 ═════════════════════
-• Check Ollama running
-• Verify model available
-• Validate NDJSON files exist
+- Check Ollama running
+- Verify model available
+- Validate NDJSON files exist
 
 STEP 2: DATA LOADING
 ════════════════════
 load_model_data()
     ↓
 compute_model_metrics()
-  • Categorize: US/NATO, Chinese, Neutral
-  • Calculate: refusal rates, response lengths
-  • Compute: deltas between categories
+  - Categorize: US/NATO, Chinese, Neutral
+  - Calculate: refusal rates, response lengths
+  - Compute: deltas between categories
     ↓
 prepare_analysis_context()
-  • Format metrics for LLM
-  • Include sample responses
-  • Add prompt context
+  - Format metrics for LLM
+  - Include sample responses
+  - Add prompt context
 
 STEP 3: MULTI-AGENT REFLECTION
 ══════════════════════════════
 ┌─────────────────────────────┐
 │ Analyst Agent               │
-│ • Analyze for 12 threat     │
+│ - Analyze for 12 threat     │
 │   categories                │
-│ • Generate findings with    │
+│ - Generate findings with    │
 │   evidence and confidence   │
 └─────────────┬───────────────┘
               ↓
 ┌─────────────────────────────┐
 │ QA Manager Agent            │
-│ • Validate evidence quality │
-│ • Challenge weak claims     │
-│ • Recommend: ACCEPT/REVISE  │
+│ - Validate evidence quality │
+│ - Challenge weak claims     │
+│ - Recommend: ACCEPT/REVISE  │
 └─────────────┬───────────────┘
               ↓
         Decision Gate
@@ -147,8 +147,8 @@ STEP 3: MULTI-AGENT REFLECTION
 
 STEP 4: OUTPUT
 ══════════════
-• Text report: llm_analysis_report.txt
-• JSON report: llm_analysis_report.json
+- Text report: llm_analysis_report.txt
+- JSON report: llm_analysis_report.json
 ```
 
 ### State Management
@@ -328,7 +328,7 @@ RECOMMENDATIONS
 | Out of memory | Reduce `LLM_ANALYZER_N_CTX` or use smaller model |
 | "Missing packages" | `pip install -r requirements.txt` |
 | Low confidence scores | Increase `MAX_ITERATIONS`, check data quality |
-| JSON parse failure | Normal — system falls back to raw text analysis |
+| JSON parse failure | Normal - system falls back to raw text analysis |
 
 ---
 
@@ -336,7 +336,7 @@ RECOMMENDATIONS
 
 1. **Run bash script first** for quick quantitative metrics
 2. **Use LLM analyzer** for deep investigation when issues found
-3. **Review QUESTIONABLE findings** manually — may reveal subtle issues
+3. **Review QUESTIONABLE findings** manually - may reveal subtle issues
 4. **Increase iterations** for high-stakes security decisions
 5. **Cross-reference** LLM findings with raw NDJSON data
 

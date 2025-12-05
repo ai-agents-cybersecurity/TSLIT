@@ -21,23 +21,22 @@ except ImportError:
     pass  # dotenv not installed, use shell environment only
 from typing import Any, Dict, List, Literal, Optional
 
-from langchain_community.chat_models import ChatLlamaCpp
+from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import END, StateGraph
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from tslit.analyzer.core import AnalysisState, prepare_analysis_context
 
 # Model configuration from environment variables
-MODEL_PATH = os.environ.get(
-    "LLM_ANALYZER_MODEL_PATH",
-    "models/Ministral-3-14B-Reasoning-2512-BF16.gguf"
-)
-N_CTX = int(os.environ.get("LLM_ANALYZER_N_CTX", "32768"))
-N_GPU_LAYERS = int(os.environ.get("LLM_ANALYZER_N_GPU_LAYERS", "-1"))
+OLLAMA_MODEL = os.environ.get("LLM_ANALYZER_MODEL", "qwen2.5:14b")
+OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
 MAX_TOKENS = int(os.environ.get("LLM_ANALYZER_MAX_TOKENS", "8192"))
 
 logger = logging.getLogger(__name__)
+
+# Log model on import for debugging
+logger.debug(f"Analyzer model: {OLLAMA_MODEL} @ {OLLAMA_BASE_URL}")
 
 
 # =============================================================================
@@ -53,6 +52,13 @@ class ThreatFinding(BaseModel):
     evidence: List[str] = Field(default_factory=list, description="Supporting evidence")
     confidence: float = Field(ge=0.0, le=1.0, description="Confidence score")
 
+    @field_validator("confidence", mode="before")
+    @classmethod
+    def clamp_confidence(cls, v: float) -> float:
+        if isinstance(v, (int, float)):
+            return max(0.0, min(1.0, float(v)))
+        return v
+
 
 class AnalystFindings(BaseModel):
     """Structured output schema for the AnalyzerAgent."""
@@ -61,6 +67,13 @@ class AnalystFindings(BaseModel):
     cross_model_comparison: str = Field(description="Cross-model behavior analysis")
     recommendations: List[str] = Field(default_factory=list, description="Action items")
     confidence_score: float = Field(ge=0.0, le=1.0, description="Overall confidence")
+
+    @field_validator("confidence_score", mode="before")
+    @classmethod
+    def clamp_confidence(cls, v: float) -> float:
+        if isinstance(v, (int, float)):
+            return max(0.0, min(1.0, float(v)))
+        return v
 
 
 class ValidatedThreat(BaseModel):
@@ -72,6 +85,13 @@ class ValidatedThreat(BaseModel):
     adjusted_severity: Optional[Literal["CRITICAL", "HIGH", "MEDIUM", "LOW"]] = Field(default=None)
     adjusted_confidence: float = Field(ge=0.0, le=1.0, description="Adjusted confidence")
 
+    @field_validator("adjusted_confidence", mode="before")
+    @classmethod
+    def clamp_confidence(cls, v: float) -> float:
+        if isinstance(v, (int, float)):
+            return max(0.0, min(1.0, float(v)))
+        return v
+
 
 class QAReview(BaseModel):
     """Structured output schema for the QAManagerAgent."""
@@ -81,6 +101,14 @@ class QAReview(BaseModel):
     missing_analysis: List[str] = Field(default_factory=list)
     overall_confidence: float = Field(ge=0.0, le=1.0)
     recommendation: Literal["ACCEPT", "REVISE", "REJECT"] = Field(description="Recommendation")
+
+    @field_validator("overall_confidence", mode="before")
+    @classmethod
+    def clamp_confidence(cls, v: float) -> float:
+        """Clamp confidence to [0.0, 1.0] range since LLMs may return out-of-bounds values."""
+        if isinstance(v, (int, float)):
+            return max(0.0, min(1.0, float(v)))
+        return v
 
 
 # =============================================================================
@@ -114,18 +142,18 @@ THREAT SEVERITY LEVELS:
 class AnalyzerAgent:
     """Primary analyst agent for deep delta and threat analysis."""
     
-    def __init__(self, model_path: str = MODEL_PATH):
-        base_llm = ChatLlamaCpp(
-            model_path=model_path,
-            n_ctx=N_CTX,
-            n_gpu_layers=N_GPU_LAYERS,
-            max_tokens=MAX_TOKENS,
+    def __init__(self, model: str = OLLAMA_MODEL):
+        base_llm = ChatOllama(
+            model=model,
+            base_url=OLLAMA_BASE_URL,
+            num_predict=MAX_TOKENS,
             temperature=0.3,
-            verbose=False,
+            format="json",
         )
         self.llm = base_llm.with_structured_output(AnalystFindings)
         self.base_llm = base_llm
-        logger.info(f"Initialized AnalyzerAgent: {model_path} (n_ctx={N_CTX})")
+        self.model = model
+        logger.info(f"Initialized AnalyzerAgent: {model} @ {OLLAMA_BASE_URL}")
     
     def analyze(self, state: AnalysisState) -> AnalysisState:
         """Perform deep analysis of model comparison data."""
@@ -191,17 +219,17 @@ Consider request prompts when validating - patterns are only malicious if unrela
 class QAManagerAgent:
     """QA review agent that validates and critiques the primary analysis."""
     
-    def __init__(self, model_path: str = MODEL_PATH):
-        base_llm = ChatLlamaCpp(
-            model_path=model_path,
-            n_ctx=N_CTX,
-            n_gpu_layers=N_GPU_LAYERS,
-            max_tokens=MAX_TOKENS,
+    def __init__(self, model: str = OLLAMA_MODEL):
+        base_llm = ChatOllama(
+            model=model,
+            base_url=OLLAMA_BASE_URL,
+            num_predict=MAX_TOKENS,
             temperature=0.2,
-            verbose=False,
+            format="json",
         )
         self.llm = base_llm.with_structured_output(QAReview)
-        logger.info(f"Initialized QAManagerAgent: {model_path} (n_ctx={N_CTX})")
+        self.model = model
+        logger.info(f"Initialized QAManagerAgent: {model} @ {OLLAMA_BASE_URL}")
     
     def review(self, state: AnalysisState) -> AnalysisState:
         """Review and validate the analyst's findings."""
@@ -259,7 +287,7 @@ Provide a rigorous QA review."""
 def should_continue(state: AnalysisState) -> str:
     """Determine if another iteration is needed."""
     iteration = state.get("iteration", 0)
-    max_iterations = state.get("max_iterations", 3)
+    max_iterations = state.get("max_iterations", 30)
     qa_confidence = state.get("qa_confidence", 0.0)
     qa_findings = state.get("qa_validated_findings", {})
     recommendation = qa_findings.get("recommendation", "REVISE")
@@ -294,7 +322,7 @@ def finalize_report(state: AnalysisState) -> AnalysisState:
         "UNIFIED THREAT ANALYSIS - AFFILIATION + TEMPORAL + CODER SECURITY",
         "=" * 80,
         f"\nGenerated: {datetime.now().isoformat()}",
-        f"Analysis Model: {MODEL_PATH} (n_ctx={N_CTX})",
+        f"Analysis Model: {OLLAMA_MODEL} (Ollama)",
         f"Total Iterations: {state.get('iteration', 0)}",
         f"Models Analyzed: {', '.join(state.get('model_names', []))}",
         "\n" + "=" * 80,

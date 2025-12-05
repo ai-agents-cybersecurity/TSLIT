@@ -9,7 +9,6 @@ build/
 .eggs/
 
 # Environment
-.env
 .venv/
 venv/
 ENV/
@@ -22,15 +21,15 @@ ENV/
 .DS_Store
 
 # Project artifacts
-artifacts/
-models/
-*.ndjson
+# artifacts/
+# *.ndjson
 
 # Reports (generated)
-*_report.txt
-*_report.json
+#*_report.txt
+#*_report.json
 
 # Temporary files
 *.tmp
 .tmp_*
 config/.tmp_*
+src/tslit.egg-info/

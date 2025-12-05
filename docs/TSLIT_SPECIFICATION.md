@@ -63,7 +63,7 @@ Chinese-origin open-weight model families:
 - Maintain registry with: `model_id`, `origin_vendor`, parameters, VRAM footprint, license, `fp16_available` flag
 - Validate FP16 weights are loaded (warn if only quantized available)
 - Support tagging models as "chinese-origin" for filtering
-- Support multiple backends with model → backend mappings
+- Support multiple backends with model -> backend mappings
 
 ### 3.2 Time-Shift Sandbox (FR-5 to FR-9)
 
@@ -111,7 +111,7 @@ Chinese-origin open-weight model families:
 | **NFR-2** | Overhead vs direct llama.cpp ≤20% latency |
 | **NFR-3** | Horizontal scale via worker nodes/containers |
 | **NFR-4** | Support 10+ models, 20+ concurrent campaigns |
-| **NFR-5** | Worker failure → retryable, not campaign termination |
+| **NFR-5** | Worker failure -> retryable, not campaign termination |
 | **NFR-6** | Config/results survive orchestrator restarts |
 | **NFR-7** | No external network calls during campaigns |
 | **NFR-8** | Data at rest encrypted where required |
@@ -126,30 +126,30 @@ Chinese-origin open-weight model families:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ CONTROL PLANE                                                │
-│  • API Server                                                │
-│  • Scheduler                                                 │
-│  • Model Registry                                            │
+│ CONTROL PLANE                                               │
+│  - API Server                                               │
+│  - Scheduler                                                │
+│  - Model Registry                                           │
 ├─────────────────────────────────────────────────────────────┤
-│ EXECUTION PLANE                                              │
-│  • Worker processes running LangGraph graphs                 │
-│  • Embedded llama.cpp runtimes                               │
+│ EXECUTION PLANE                                             │
+│  - Worker processes running LangGraph graphs                │
+│  - Embedded llama.cpp runtimes                              │
 ├─────────────────────────────────────────────────────────────┤
-│ DATA PLANE                                                   │
-│  • Database (configs, metadata)                              │
-│  • Log storage (NDJSON artifacts)                            │
-│  • Report artifacts                                          │
+│ DATA PLANE                                                  │
+│  - Database (configs, metadata)                             │
+│  - Log storage (NDJSON artifacts)                           │
+│  - Report artifacts                                         │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ### 5.2 Deployment Topologies
 
 **Linux/Nvidia:**
-- Bare metal → Docker → TSLIT + llama.cpp (CUDA)
-- Bare metal → Hypervisor → VM (GPU passthrough) → Docker → TSLIT
+- Bare metal -> Docker -> TSLIT + llama.cpp (CUDA)
+- Bare metal -> Hypervisor -> VM (GPU passthrough) -> Docker -> TSLIT
 
 **macOS/Apple Silicon:**
-- Native macOS → llama.cpp (Metal) → TSLIT
+- Native macOS -> llama.cpp (Metal) -> TSLIT
 - Docker with Metal exposed (experimental)
 
 ---
@@ -176,7 +176,7 @@ Chinese-origin open-weight model families:
 ### 6.3 Data Flows
 
 ```
-Operator → configs → TSLIT CLI → orchestrator → LangGraph flows
+Operator -> configs -> TSLIT CLI -> orchestrator -> LangGraph flows
                                       ↓
                               llama.cpp bindings
                                       ↓
@@ -190,10 +190,10 @@ Operator → configs → TSLIT CLI → orchestrator → LangGraph flows
 | ID | Component | Threat | STRIDE | Mitigation | Risk |
 |----|-----------|--------|--------|------------|------|
 | 0001 | Model Registry | Tampering with metadata | Tampering | Sign registry, enforce checksums | High |
-| 0002 | Config Parser | YAML injection → code exec | Tampering | Use `yaml.safe_load`, validate schema | High |
+| 0002 | Config Parser | YAML injection -> code exec | Tampering | Use `yaml.safe_load`, validate schema | High |
 | 0003 | Orchestrator | Spoofed operator | Spoofing | OS-level authN, audit logs | Medium |
 | 0004 | llama.cpp runtime | Library hijack | Tampering | Pin wheel hashes, verify checksums | High |
-| 0005 | Model Store | Path hijack → wrong GGUF | Spoofing | Require checksums, read-only dirs | Medium |
+| 0005 | Model Store | Path hijack -> wrong GGUF | Spoofing | Require checksums, read-only dirs | Medium |
 | 0006 | Artifact Storage | Log exposure | Info Disclosure | Encrypt at rest, restrict access | High |
 | 0007 | Virtual Clock | Env manipulation bypass | Tampering | Validate time params at runtime | Medium |
 | 0008 | Anomaly Detectors | Weak detection rules | Repudiation | Test suites, version detector rules | Medium |

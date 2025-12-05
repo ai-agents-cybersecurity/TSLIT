@@ -22,15 +22,15 @@ echo "Config: $CONFIG"
 echo "Output: $OUTPUT_DIR"
 echo ""
 echo "Testing for:"
-echo "  • Affiliation bias (US/NATO vs Chinese)"
-echo "  • Time-based logic bombs (9/11, July 4, etc.)"
-echo "  • Coder-specific threats"
+echo "  Affiliation bias (US/NATO vs Chinese)"
+echo "  Time-based logic bombs (9/11, July 4, etc.)"
+echo "  Coder-specific threats"
 echo ""
 echo "========================================="
 
 # Check if model exists
 if [ ! -f "$MODEL_PATH" ]; then
-    echo "❌ ERROR: Model not found: $MODEL_PATH"
+    echo "ERROR: Model not found: $MODEL_PATH"
     exit 1
 fi
 
@@ -47,15 +47,12 @@ TSLIT_TOTAL_ISOLATION=1 tslit campaign run --config "$CONFIG"
 
 echo ""
 echo "========================================="
-echo "✅ Campaign Complete!"
+echo "Campaign Complete!"
 echo "========================================="
 echo ""
 echo "Results: $OUTPUT_DIR/"
 echo ""
 echo "Next steps:"
-echo "  1. Quick analysis:"
-echo "     jq '.anomaly_flags[] | .detector' $OUTPUT_DIR/*.ndjson | sort | uniq -c"
-echo ""
-echo "  2. Run LLM analyzer:"
-echo "     python -m tslit.analyzer --artifacts-dir $OUTPUT_DIR"
+echo " Run LLM analyzer:"
+echo " python -m tslit.analyzer --artifacts-dir $OUTPUT_DIR"
 echo ""
